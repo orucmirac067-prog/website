@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment - Orc Detailing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2C2C2C;
+            --secondary: #E5E5E5;
+            --accent: #1E3A8A;
+            --highlight: #EA580C;
+            --background: #FFFFFF;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--primary);
+        }
+        
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--accent), var(--highlight));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--highlight));
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(30, 58, 138, 0.3);
+        }
+        
+        .service-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .service-card.selected {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, rgba(30, 58, 138, 0.05), rgba(234, 88, 12, 0.05));
+        }
+        
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .calendar-day:hover {
+            background-color: #e5e7eb;
+        }
+        
+        .calendar-day.available {
+            background-color: #f3f4f6;
+            color: var(--primary);
+        }
+        
+        .calendar-day.selected {
+            background: linear-gradient(135deg, var(--accent), var(--highlight));
+            color: white;
+        }
+        
+        .calendar-day.unavailable {
+            background-color: #f9fafb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .time-slot {
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .time-slot:hover {
+            border-color: var(--accent);
+        }
+        
+        .time-slot.selected {
+            background: linear-gradient(135deg, var(--accent), var(--highlight));
+            color: white;
+            border-color: transparent;
+        }
+        
+        .time-slot.unavailable {
+            background-color: #f9fafb;
+            color: #9ca3af;
+            cursor: not-allowed;
+            border-color: #e5e7eb;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, var(--accent), var(--highlight));
+            transition: width 0.3s ease;
+        }
+        
+        .step {
+            display: none;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        
+        .subscription-toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .subscription-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background: linear-gradient(135deg, var(--accent), var(--highlight));
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-effect">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-display font-bold text-white">Orc Detailing</a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-8">
+                        <a href="index.html" class="text-white hover:text-orange-300 transition-colors duration-300">Home</a>
+                        <a href="services.html" class="text-white hover:text-orange-300 transition-colors duration-300">Services</a>
+                        <a href="booking.html" class="text-orange-300 font-semibold">Book Now</a>
+                        <a href="index.html#contact" class="text-white hover:text-orange-300 transition-colors duration-300">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-blue-600 to-orange-500 pt-24 pb-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl lg:text-5xl font-display font-bold text-white mb-6">Book Your Detail</h1>
+            <p class="text-xl text-white opacity-90 max-w-3xl mx-auto">
+                Schedule your premium car detailing service in just a few simple steps.
+            </p>
+        </div>
+    </section>
+
+    <!-- Progress Bar -->
+    <section class="bg-white py-6 border-b">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <div class="flex items-center">
+                        <div id="step-1-indicator" class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">1</div>
+                        <span class="ml-2 text-sm font-medium text-blue-600">Service</span>
+                    </div>
+                    <div class="w-16 h-0.5 bg-gray-300 mx-4"></div>
+                    <div class="flex items-center">
+                        <div id="step-2-indicator" class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-semibold">2</div>
+                        <span class="ml-2 text-sm font-medium text-gray-600">Date & Time</span>
+                    </div>
+                    <div class="w-16 h-0.5 bg-gray-300 mx-4"></div>
+                    <div class="flex items-center">
+                        <div id="step-3-indicator" class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-semibold">3</div>
+                        <span class="ml-2 text-sm font-medium text-gray-600">Details</span>
+                    </div>
+                    <div class="w-16 h-0.5 bg-gray-300 mx-4"></div>
+                    <div class="flex items-center">
+                        <div id="step-4-indicator" class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-semibold">4</div>
+                        <span class="ml-2 text-sm font-medium text-gray-600">Confirm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill" style="width: 25%"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Form -->
+    <section class="py-12 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Step 1: Service Selection -->
+            <div id="step-1" class="step active">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-display font-bold mb-4 gradient-text">Choose Your Service</h2>
+                    <p class="text-gray-600">Select the detailing package that best suits your needs.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Basic Package -->
+                    <div class="service-card bg-white rounded-2xl p-6 border-2 border-gray-200" data-service="basic" data-price="89.99" data-duration="2-3 hours">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-display font-bold mb-2">Basic Package</h3>
+                            <div class="text-3xl font-mono font-bold gradient-text mb-2">€89.99</div>
+                            <p class="text-gray-600 text-sm">2-3 hours</p>
+                        </div>
+                        <ul class="space-y-2 text-sm text-gray-600 mb-6">
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Exterior hand wash & dry
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Wheel & tire cleaning
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Interior vacuuming
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Dashboard cleaning
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Premium Package -->
+                    <div class="service-card bg-white rounded-2xl p-6 border-2 border-gray-200" data-service="premium" data-price="150" data-duration="3-4 hours">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-display font-bold mb-2">Premium Package</h3>
+                            <div class="text-3xl font-mono font-bold gradient-text mb-2">€150</div>
+                            <p class="text-gray-600 text-sm">3-4 hours</p>
+                        </div>
+                        <ul class="space-y-2 text-sm text-gray-600 mb-6">
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                All Basic services
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Paint sealant application
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Clay bar treatment
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Light paint correction
+                            </li>
+                        </ul>
+                        <div class="absolute -top-2 -right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold">Popular</div>
+                    </div>
+
+                    <!-- Full Package -->
+                    <div class="service-card bg-white rounded-2xl p-6 border-2 border-gray-200" data-service="full" data-price="200" data-duration="4-6 hours">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-display font-bold mb-2">Full Package</h3>
+                            <div class="text-3xl font-mono font-bold gradient-text mb-2">€200</div>
+                            <p class="text-gray-600 text-sm">4-6 hours</p>
+                        </div>
+                        <ul class="space-y-2 text-sm text-gray-600 mb-6">
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                All Premium services
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Ceramic coating
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Deep interior shampoo
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Engine bay cleaning
+                            </li>
+                        </ul>
+                        <div class="bg-orange-50 p-3 rounded-lg mb-4">
+                            <p class="text-xs text-orange-700 font-semibold">Optional Subscription</p>
+                            <p class="text-xs text-orange-600">€50/month for maintenance</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button id="next-step-1" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Continue to Date & Time
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Date & Time Selection -->
+            <div id="step-2" class="step">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-display font-bold mb-4 gradient-text">Select Date & Time</h2>
+                    <p class="text-gray-600">Choose your preferred appointment date and time.</p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Calendar -->
+                    <div class="bg-white rounded-2xl p-6 shadow-lg">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-semibold">December 2025</h3>
+                            <div class="flex space-x-2">
+                                <button class="p-2 hover:bg-gray-100 rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </button>
+                                <button class="p-2 hover:bg-gray-100 rounded-lg">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="calendar mb-4">
+                            <div class="text-center text-sm font-medium text-gray-500 py-2">Sun</div>
+                            <div class="text-center text-sm font-medium text-gray-500 py-2">Mon</div>
+                            <div class="text-center text-sm font-medium text-gray-500 py-2">Tue</div>
+                            <div class="text-center text-sm font-medium text-gray-500 py-2">Wed</div>
+                            <div class="text-center text-sm font-medium text-gray-500 py-2">Thu</div>
+                            <div class="text-center text-sm font-medium text-gray-500 py-2">Fri</div>
+                            <div class="text-center text-sm font-medium text-gray-500 py-2">Sat</div>
+                            
+                            <!-- Calendar days will be generated by JavaScript -->
+                            <div class="calendar-day unavailable">1</div>
+                            <div class="calendar-day unavailable">2</div>
+                            <div class="calendar-day unavailable">3</div>
+                            <div class="calendar-day unavailable">4</div>
+                            <div class="calendar-day unavailable">5</div>
+                            <div class="calendar-day unavailable">6</div>
+                            <div class="calendar-day unavailable">7</div>
+                            <div class="calendar-day available" data-date="2025-12-08">8</div>
+                            <div class="calendar-day available" data-date="2025-12-09">9</div>
+                            <div class="calendar-day available" data-date="2025-12-10">10</div>
+                            <div class="calendar-day available" data-date="2025-12-11">11</div>
+                            <div class="calendar-day available" data-date="2025-12-12">12</div>
+                            <div class="calendar-day available" data-date="2025-12-13">13</div>
+                            <div class="calendar-day available" data-date="2025-12-14">14</div>
+                            <div class="calendar-day available" data-date="2025-12-15">15</div>
+                            <div class="calendar-day available" data-date="2025-12-16">16</div>
+                            <div class="calendar-day available" data-date="2025-12-17">17</div>
+                            <div class="calendar-day available" data-date="2025-12-18">18</div>
+                            <div class="calendar-day available" data-date="2025-12-19">19</div>
+                            <div class="calendar-day available" data-date="2025-12-20">20</div>
+                            <div class="calendar-day available" data-date="2025-12-21">21</div>
+                            <div class="calendar-day available" data-date="2025-12-22">22</div>
+                            <div class="calendar-day available" data-date="2025-12-23">23</div>
+                            <div class="calendar-day available" data-date="2025-12-24">24</div>
+                            <div class="calendar-day unavailable">25</div>
+                            <div class="calendar-day unavailable">26</div>
+                            <div class="calendar-day unavailable">27</div>
+                            <div class="calendar-day unavailable">28</div>
+                            <div class="calendar-day unavailable">29</div>
+                            <div class="calendar-day unavailable">30</div>
+                            <div class="calendar-day unavailable">31</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Time Slots -->
+                    <div class="bg-white rounded-2xl p-6 shadow-lg">
+                        <h3 class="text-xl font-semibold mb-6">Available Times</h3>
+                        <div id="time-slots" class="grid grid-cols-2 gap-3">
+                            <div class="time-slot" data-time="08:00">08:00</div>
+                            <div class="time-slot" data-time="09:00">09:00</div>
+                            <div class="time-slot" data-time="10:00">10:00</div>
+                            <div class="time-slot" data-time="11:00">11:00</div>
+                            <div class="time-slot" data-time="12:00">12:00</div>
+                            <div class="time-slot" data-time="13:00">13:00</div>
+                            <div class="time-slot" data-time="14:00">14:00</div>
+                            <div class="time-slot" data-time="15:00">15:00</div>
+                            <div class="time-slot" data-time="16:00">16:00</div>
+                            <div class="time-slot unavailable">17:00 (Full)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between mt-8">
+                    <button id="prev-step-2" class="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                        Back to Services
+                    </button>
+                    <button id="next-step-2" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Continue to Details
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Customer Details -->
+            <div id="step-3" class="step">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-display font-bold mb-4 gradient-text">Your Details</h2>
+                    <p class="text-gray-600">Please provide your contact and vehicle information.</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg">
+                    <form id="customer-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                                <input type="text" name="firstName" class="form-input" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                                <input type="text" name="lastName" class="form-input" required>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                                <input type="email" name="email" class="form-input" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Phone *</label>
+                                <input type="tel" name="phone" class="form-input" required>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Make *</label>
+                                <input type="text" name="make" class="form-input" placeholder="e.g., BMW" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Model *</label>
+                                <input type="text" name="model" class="form-input" placeholder="e.g., 3 Series" required>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Year *</label>
+                            <input type="number" name="year" class="form-input" placeholder="e.g., 2020" min="1990" max="2025" required>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
+                            <textarea name="requests" class="form-input" rows="3" placeholder="Any specific concerns or requests..."></textarea>
+                        </div>
+                        
+                        <!-- Subscription Option (only for Full Package) -->
+                        <div id="subscription-option" class="hidden bg-orange-50 p-6 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-orange-800">Monthly Maintenance Plan</h4>
+                                    <p class="text-orange-700 text-sm">€50/month - 2 basic details monthly</p>
+                                    <ul class="text-orange-600 text-xs mt-2 space-y-1">
+                                        <li>• Priority scheduling</li>
+                                        <li>• 15% discount on additional services</li>
+                                        <li>• Cancel anytime</li>
+                                    </ul>
+                                </div>
+                                <label class="subscription-toggle">
+                                    <input type="checkbox" name="subscription" value="50">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="flex justify-between mt-8">
+                    <button id="prev-step-3" class="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                        Back to Date & Time
+                    </button>
+                    <button id="next-step-3" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold">
+                        Review Booking
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Confirmation -->
+            <div id="step-4" class="step">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-display font-bold mb-4 gradient-text">Confirm Your Booking</h2>
+                    <p class="text-gray-600">Please review your appointment details before confirming.</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-8 shadow-lg mb-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Booking Summary -->
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">Booking Summary</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Service:</span>
+                                    <span id="summary-service" class="font-semibold">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Date:</span>
+                                    <span id="summary-date" class="font-semibold">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Time:</span>
+                                    <span id="summary-time" class="font-semibold">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Duration:</span>
+                                    <span id="summary-duration" class="font-semibold">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Vehicle:</span>
+                                    <span id="summary-vehicle" class="font-semibold">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pricing Summary -->
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4">Pricing</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Service Fee:</span>
+                                    <span id="summary-price" class="font-semibold">-</span>
+                                </div>
+                                <div id="subscription-summary" class="flex justify-between hidden">
+                                    <span class="text-gray-600">Monthly Subscription:</span>
+                                    <span class="font-semibold text-orange-600">€50.00</span>
+                                </div>
+                                <hr class="my-4">
+                                <div class="flex justify-between text-lg font-bold">
+                                    <span>Total Today:</span>
+                                    <span id="summary-total" class="gradient-text">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Information -->
+                    <div class="mt-8 pt-8 border-t">
+                        <h3 class="text-xl font-semibold mb-4">Contact Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <span class="text-gray-600">Name:</span>
+                                <span id="summary-name" class="font-semibold ml-2">-</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Email:</span>
+                                <span id="summary-email" class="font-semibold ml-2">-</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Phone:</span>
+                                <span id="summary-phone" class="font-semibold ml-2">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between">
+                    <button id="prev-step-4" class="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                        Back to Details
+                    </button>
+                    <button id="confirm-booking" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold">
+                        Confirm Booking
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success Message -->
+            <div id="success-message" class="hidden text-center py-12">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-display font-bold mb-4 gradient-text">Booking Confirmed!</h2>
+                <p class="text-gray-600 mb-6">Thank you for choosing Orc Detailing. We've sent a confirmation email with all the details.</p>
+                <div class="bg-blue-50 p-4 rounded-lg mb-6">
+                    <p class="text-blue-800 font-semibold">Booking Reference: <span id="booking-reference" class="font-mono">ORC20251207001</span></p>
+                </div>
+                <div class="space-x-4">
+                    <a href="index.html" class="btn-primary text-white px-6 py-3 rounded-lg font-semibold inline-block">
+                        Return Home
+                    </a>
+                    <button onclick="window.print()" class="border-2 border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
+                        Print Details
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h3 class="text-2xl font-display font-bold mb-4">Orc Detailing</h3>
+                <p class="text-gray-400 mb-6">Precision automotive care for discerning owners</p>
+                <div class="border-t border-gray-700 pt-6">
+                    <p class="text-gray-500">&copy; 2025 Orc Detailing. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>
